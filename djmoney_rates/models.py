@@ -35,6 +35,14 @@ class RateSource(models.Model):
             self.name, self.base_currency, self.last_update)
 
 
+    def save(self, *args, **kwargs):
+        result = super(RateSource, self).save(*args, **kwargs)
+        cache.set(
+            '{0}:{1}:name={2}'.format(
+                self._meta.app_label, self._meta.model_name, self.name), result)
+        return result
+
+
 @python_2_unicode_compatible
 class Rate(models.Model):
     source = models.ForeignKey(RateSource)
@@ -48,3 +56,13 @@ class Rate(models.Model):
 
     def __str__(self):
         return _("%s at %.6f") % (self.currency, self.value)
+
+    def save(self, *args, **kwargs):
+        result = super(Rate, self).save(*args, **kwargs)
+        cache.set(
+            '{0}:{1}:currency={2}:source_id={3}'.format(
+                self._meta.app_label, self._meta.model_name, self.currency.upper(),
+                self.source_id), result)
+        return result
+
+
